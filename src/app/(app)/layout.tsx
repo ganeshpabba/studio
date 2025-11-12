@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Activity, Bell, Camera, Settings, FileText } from "lucide-react"
+import { Activity, Bell, Camera, Settings, FileText, Shield } from "lucide-react"
 
 import {
   SidebarProvider,
@@ -29,6 +29,7 @@ const navItems = [
   { href: "/live-feed", label: "Live Feed", icon: Camera },
   { href: "/alerts", label: "Alerts", icon: Bell },
   { href: "/reports", label: "Reports", icon: FileText },
+  { href: "/surveillance", label: "Surveillance", icon: Shield },
   { href: "/configuration", label: "Configuration", icon: Settings },
 ]
 
