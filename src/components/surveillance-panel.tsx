@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { analyzeImage, AnalyzeImageOutput } from '@/ai/flows/analyze-image-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Activity, Camera, Loader2, Smile, Video, VideoOff } from 'lucide-react';
+import { Activity, Camera, Loader2, Smile, VideoOff } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const cameras = [
@@ -48,11 +48,16 @@ export function SurveillancePanel() {
 
   const runAnalysis = useCallback(async (camera: (typeof cameras)[0]) => {
     if (!camera || !camera.feed) {
-      toast({
-        variant: 'destructive',
-        title: 'Analysis Failed',
-        description: 'Cannot analyze a webcam feed or empty source in this demo.',
-      });
+      setAnalysisResult(null);
+      if (camera && !camera.feed) {
+        // This is the webcam case
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Analysis Failed',
+          description: 'Cannot analyze an empty source.',
+        });
+      }
       return;
     }
     setIsAnalyzing(true);
@@ -73,10 +78,13 @@ export function SurveillancePanel() {
   }, [toast]);
   
   useEffect(() => {
-    if (activeCamera && activeCamera.feed) {
+    setAnalysisResult(null);
+    if (activeCamera) {
       runAnalysis(activeCamera); // Initial analysis on camera switch
-      const interval = setInterval(() => runAnalysis(activeCamera), 10000); // Analyze every 10 seconds
-      return () => clearInterval(interval);
+      if (activeCamera.feed) {
+        const interval = setInterval(() => runAnalysis(activeCamera), 10000); // Analyze every 10 seconds
+        return () => clearInterval(interval);
+      }
     }
   }, [activeCameraId, activeCamera, runAnalysis]);
 
@@ -110,7 +118,7 @@ export function SurveillancePanel() {
                     <Image
                     src={activeCamera.feed.imageUrl}
                     alt={activeCamera.name}
-                    layout="fill"
+                    fill={true}
                     objectFit="cover"
                     data-ai-hint={activeCamera.feed.imageHint}
                     />
@@ -187,16 +195,16 @@ export function SurveillancePanel() {
                   </div>
                 </div>
               ) : (
-                !isAnalyzing && (
+                !isAnalyzing && activeCamera && !activeCamera.feed && (
                     <div className="text-center text-muted-foreground py-12">
-                        <p>No analysis data available.</p>
+                        <p>Select a CCTV feed to begin analysis.</p>
                     </div>
                 )
               )}
             </CardContent>
           </ScrollArea>
            <CardContent className="border-t pt-4">
-              <Button onClick={() => activeCamera && runAnalysis(activeCamera)} disabled={isAnalyzing} className="w-full">
+              <Button onClick={() => activeCamera && runAnalysis(activeCamera)} disabled={isAnalyzing || !activeCamera?.feed} className="w-full">
                 {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
                 Analyze Now
               </Button>
