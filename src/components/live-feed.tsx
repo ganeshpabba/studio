@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Alert as UiAlert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { useToast } from '@/hooks/use-toast'
@@ -8,14 +9,16 @@ import { useAppContext } from '@/contexts/AppContext'
 import { AlertLogTable } from './alert-log-table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from './ui/button'
-import { Loader2, Scan } from 'lucide-react'
+import { Loader2, Scan, Activity, Smile, Box, Dog } from 'lucide-react'
 import { analyzeImage, AnalyzeImageOutput } from '@/ai/flows/analyze-image-flow'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
+import { Badge } from './ui/badge'
 
 export function LiveFeed() {
   const [hasCameraPermission, setHasCameraPermission] = useState(false);
@@ -154,21 +157,48 @@ export function LiveFeed() {
       </div>
 
       <Dialog open={!!analysisResult} onOpenChange={(open) => !open && setAnalysisResult(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Scene Analysis</DialogTitle>
+            <DialogTitle>Scene Analysis Complete</DialogTitle>
+            <DialogDescription>
+              AI-powered breakdown of the captured camera frame.
+            </DialogDescription>
           </DialogHeader>
           {analysisResult && (
-            <div className="space-y-4">
+            <div className="space-y-6 pt-4">
               <div>
-                <h4 className="font-semibold">Description</h4>
-                <p>{analysisResult.description}</p>
+                <h4 className="font-semibold text-lg mb-2">Scene Description</h4>
+                <p className="text-muted-foreground">{analysisResult.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Action</CardTitle>
+                    <Activity className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-bold">{analysisResult.action}</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">Emotion</CardTitle>
+                    <Smile className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg font-bold">{analysisResult.emotion}</div>
+                  </CardContent>
+                </Card>
               </div>
               <div>
-                <h4 className="font-semibold">Objects Detected</h4>
-                <ul className="list-disc list-inside">
-                  {analysisResult.objects.map((obj, i) => <li key={i}>{obj}</li>)}
-                </ul>
+                <h4 className="font-semibold text-lg mb-2">Objects & Animals Detected</h4>
+                <div className="flex flex-wrap gap-2">
+                  {analysisResult.objects.length > 0 ? (
+                    analysisResult.objects.map((obj, i) => <Badge key={i} variant="secondary">{obj}</Badge>)
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No specific objects detected.</p>
+                  )}
+                </div>
               </div>
             </div>
           )}

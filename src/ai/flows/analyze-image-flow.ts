@@ -18,8 +18,9 @@ export type AnalyzeImageInput = z.infer<typeof AnalyzeImageInputSchema>;
 
 const AnalyzeImageOutputSchema = z.object({
   description: z.string().describe('A detailed description of the scene in the image.'),
-  objects: z.array(z.string()).describe('A list of objects identified in the image.'),
+  objects: z.array(z.string()).describe('A list of objects and animals identified in the image.'),
   action: z.string().describe('A potential action or event happening in the scene (e.g., walking, sitting, idle).'),
+  emotion: z.string().describe('The perceived emotion of any person in the scene (e.g., happy, sad, neutral). If no person, return "N/A".'),
 });
 export type AnalyzeImageOutput = z.infer<typeof AnalyzeImageOutputSchema>;
 
@@ -35,6 +36,7 @@ const analyzeImagePrompt = ai.definePrompt({
 
   Describe the scene in detail. Identify all relevant objects, people, and animals.
   Determine what action is taking place.
+  Assess the primary emotion of any person present (e.g., happy, sad, angry, neutral). If no person is visible, the emotion should be "N/A".
 
   Photo: {{media url=photoDataUri}}`,
 });
