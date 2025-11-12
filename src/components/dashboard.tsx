@@ -1,7 +1,6 @@
 "use client";
 
-import { BarChart, Users, AlertTriangle, ShieldCheck } from 'lucide-react';
-
+import { BarChart, Users, AlertTriangle, ShieldCheck, FileText, Loader2 } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -24,8 +23,10 @@ import {
 } from 'recharts';
 import { useAppContext } from '@/contexts/AppContext';
 import { AlertLogTable } from './alert-log-table';
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { ChartConfig } from '@/components/ui/chart';
+import { summarizeAlertsForOperator } from '@/ai/flows/summarize-alerts-for-operator';
+import { Button } from './ui/button';
 
 const chartConfig = {
   count: {
@@ -47,6 +48,8 @@ const chartConfig = {
 
 export function Dashboard() {
   const { stats, alerts } = useAppContext();
+  const [summary, setSummary] = useState('');
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const behaviorData = useMemo(() => {
     if (!stats) return [];
@@ -57,8 +60,28 @@ export function Dashboard() {
     }));
   }, [stats]);
 
+  const generateSummary = async () => {
+    setIsSummarizing(true);
+    try {
+      const result = await summarizeAlertsForOperator({ alerts });
+      setSummary(result.summary);
+    } catch (error) {
+      console.error("Failed to generate summary", error);
+      setSummary("Could not generate summary at this time.");
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (alerts.length > 0) {
+      generateSummary();
+    }
+  }, [alerts]);
+
+
   if (!stats) {
-    return <div>Loading...</div>;
+    return <div className="flex h-full w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
 
   const recentAlerts = alerts.slice(0, 5);
@@ -124,8 +147,31 @@ export function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+       <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Daily Summary</CardTitle>
+            <CardDescription>An AI-generated summary of today's alerts.</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={generateSummary} disabled={isSummarizing}>
+            {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+            Regenerate
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {isSummarizing && !summary ? (
+             <div className="flex items-center space-x-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Generating summary...</span>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{summary || "No summary available."}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-5">
+        <Card className="md:col-span-3">
           <CardHeader>
             <CardTitle>Behavior Distribution</CardTitle>
             <CardDescription>
@@ -149,7 +195,7 @@ export function Dashboard() {
             </ChartContainer>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle>Recent Alerts</CardTitle>
             <CardDescription>

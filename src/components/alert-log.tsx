@@ -13,6 +13,8 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Scan,
+  Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -43,6 +45,9 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { analyzeImage, type AnalyzeImageOutput } from '@/ai/flows/analyze-image-flow';
+import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from './ui/scroll-area';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -52,6 +57,9 @@ export function AlertLog() {
   const [filterType, setFilterType] = useState('all');
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalyzeImageOutput | null>(null);
+  const { toast } = useToast();
 
   const filteredAlerts = useMemo(() => {
     return alerts
@@ -111,6 +119,34 @@ export function AlertLog() {
     }
   };
 
+  const handleAnalyzeSnapshot = async () => {
+    if (!selectedAlert?.snapshot_path) return;
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
+
+    try {
+      const result = await analyzeImage({ photoDataUri: selectedAlert.snapshot_path });
+      setAnalysisResult(result);
+    } catch (error) {
+      console.error('Analysis failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Analysis Failed',
+        description: 'Could not analyze the snapshot image.',
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setSelectedAlert(null);
+      setAnalysisResult(null);
+      setIsAnalyzing(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -131,7 +167,7 @@ export function AlertLog() {
           <div className="flex items-center gap-2">
             <Select onValueChange={(value) => { setFilterType(value); setCurrentPage(1); }} value={filterType}>
                 <SelectTrigger className="w-full sm:w-[180px]">
-                    <Filter className="mr-2" />
+                    <Filter className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Filter by type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -142,13 +178,13 @@ export function AlertLog() {
                     ))}
                 </SelectContent>
             </Select>
-            <Button onClick={refreshAlerts} variant="outline" size="icon"><RefreshCw/></Button>
-            <Button onClick={exportToCSV} variant="outline" size="icon"><Download/></Button>
-            <Button onClick={() => { if(confirm('Are you sure you want to delete all alerts?')) deleteAllAlerts()}} variant="destructive" size="icon"><Trash2/></Button>
+            <Button onClick={refreshAlerts} variant="outline" size="icon" aria-label="Refresh alerts"><RefreshCw className="h-4 w-4"/></Button>
+            <Button onClick={exportToCSV} variant="outline" size="icon" aria-label="Download alerts"><Download className="h-4 w-4"/></Button>
+            <Button onClick={() => { if(confirm('Are you sure you want to delete all alerts?')) deleteAllAlerts()}} variant="destructive" size="icon" aria-label="Delete all alerts"><Trash2 className="h-4 w-4"/></Button>
           </div>
       </div>
 
-      <div className="bg-card border rounded-lg overflow-hidden">
+      <Card className="overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
@@ -182,15 +218,15 @@ export function AlertLog() {
                     </TableCell>
                     <TableCell>{format(new Date(alert.timestamp), "PPp")}</TableCell>
                     <TableCell className="text-right">
-                        <Button onClick={() => setSelectedAlert(alert)} variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-                        <Button onClick={() => { if(confirm('Delete this alert?')) deleteAlert(alert.id); }} variant="ghost" size="icon" className="text-destructive-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                        <Button onClick={() => setSelectedAlert(alert)} variant="ghost" size="icon" aria-label="View alert"><Eye className="h-4 w-4" /></Button>
+                        <Button onClick={() => { if(confirm('Delete this alert?')) deleteAlert(alert.id); }} variant="ghost" size="icon" className="text-destructive-foreground hover:text-destructive" aria-label="Delete alert"><Trash2 className="h-4 w-4" /></Button>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
-      </div>
+      </Card>
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
@@ -206,38 +242,71 @@ export function AlertLog() {
         </div>
       )}
 
-      <Dialog open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={!!selectedAlert} onOpenChange={handleOpenChange}>
+        <DialogContent className="max-w-4xl">
           {selectedAlert && (
             <>
               <DialogHeader>
                 <DialogTitle>Alert Details: #{selectedAlert.id}</DialogTitle>
               </DialogHeader>
               <div className="grid md:grid-cols-2 gap-6 pt-4">
-                <div className="relative aspect-video rounded-lg overflow-hidden">
-                  <Image src={selectedAlert.snapshot_path} alt="Alert snapshot" layout="fill" objectFit="cover" data-ai-hint="person falling" />
+                <div className="space-y-4">
+                  <div className="relative aspect-video rounded-lg overflow-hidden border">
+                    <Image src={selectedAlert.snapshot_path} alt="Alert snapshot" fill objectFit="cover" data-ai-hint="person falling" />
+                  </div>
+                  <div className="space-y-2">
+                    <div><span className="font-semibold text-muted-foreground">Behavior:</span> {getBehaviorBadge(selectedAlert.behaviour_type)}</div>
+                    <div><span className="font-semibold text-muted-foreground">Confidence:</span> <span className="font-mono">{(selectedAlert.confidence * 100).toFixed(2)}%</span></div>
+                    <div><span className="font-semibold text-muted-foreground">Person ID:</span> Person {selectedAlert.person_id}</div>
+                    <div><span className="font-semibold text-muted-foreground">Camera:</span> {selectedAlert.camera_id}</div>
+                    <div><span className="font-semibold text-muted-foreground">Timestamp:</span> {format(new Date(selectedAlert.timestamp), "PPp")}</div>
+                  </div>
+                   <Button onClick={handleAnalyzeSnapshot} disabled={isAnalyzing} className="w-full">
+                    {isAnalyzing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Scan className="mr-2 h-4 w-4" />
+                    )}
+                    Analyze Snapshot
+                  </Button>
                 </div>
                 <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-semibold text-muted-foreground">Behavior</h4>
-                    <p>{getBehaviorBadge(selectedAlert.behaviour_type)}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-muted-foreground">Confidence</h4>
-                    <p className="font-mono text-lg">{(selectedAlert.confidence * 100).toFixed(2)}%</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-muted-foreground">Person ID</h4>
-                    <p>Person {selectedAlert.person_id}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-muted-foreground">Camera</h4>
-                    <p>{selectedAlert.camera_id}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-muted-foreground">Timestamp</h4>
-                    <p>{format(new Date(selectedAlert.timestamp), "PPp")}</p>
-                  </div>
+                  <h3 className="font-semibold text-lg">AI Analysis</h3>
+                  {isAnalyzing && (
+                    <div className="flex items-center justify-center p-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                  {analysisResult ? (
+                    <ScrollArea className="h-[450px] p-4 rounded-md border bg-muted/20">
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-semibold mb-1">Scene Description</h4>
+                          <p className="text-sm text-muted-foreground">{analysisResult.description}</p>
+                        </div>
+                         <div>
+                          <h4 className="font-semibold mb-1">Detected Action</h4>
+                          <p className="text-sm text-muted-foreground">{analysisResult.action}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-1">Perceived Emotion</h4>
+                          <p className="text-sm text-muted-foreground">{analysisResult.emotion}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">Objects & Animals Detected</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {analysisResult.objects.length > 0 ? (
+                              analysisResult.objects.map((obj, i) => <Badge key={i} variant="secondary">{obj}</Badge>)
+                            ) : (
+                              <p className="text-sm text-muted-foreground">No specific objects detected.</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    !isAnalyzing && <div className="text-center text-muted-foreground py-8">Click "Analyze Snapshot" to generate an AI analysis.</div>
+                  )}
                 </div>
               </div>
             </>
