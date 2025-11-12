@@ -10,7 +10,7 @@ export const mockAlerts: Alert[] = [
     confidence: 0.95,
     timestamp: new Date(now.getTime() - 2 * 60 * 1000).toISOString(),
     camera_id: 'cam-01',
-    snapshot_path: '/placeholders/snapshot-1.png',
+    snapshot_path: 'https://images.unsplash.com/photo-1605548587049-8bda5bfdbbf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBmYWxsaW5nfGVufDB8fHx8MTc2Mjg2NjY4Nnww&ixlib=rb-4.1.0&q=80&w=1080',
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ export const mockAlerts: Alert[] = [
     confidence: 0.82,
     timestamp: new Date(now.getTime() - 15 * 60 * 1000).toISOString(),
     camera_id: 'cam-02',
-    snapshot_path: '/placeholders/snapshot-2.png',
+    snapshot_path: 'https://images.unsplash.com/photo-1666342873508-453f4b7883b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBzdGFuZGluZ3xlbnwwfHx8fDE3NjI4NDQ5NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
   },
   {
     id: 3,
@@ -28,7 +28,7 @@ export const mockAlerts: Alert[] = [
     confidence: 0.99,
     timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000).toISOString(),
     camera_id: 'cam-01',
-    snapshot_path: '/placeholders/snapshot-1.png',
+    snapshot_path: 'https://images.unsplash.com/photo-1605548587049-8bda5bfdbbf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBmYWxsaW5nfGVufDB8fHx8MTc2Mjg2NjY4Nnww&ixlib=rb-4.1.0&q=80&w=1080',
   },
   {
     id: 4,
@@ -37,7 +37,7 @@ export const mockAlerts: Alert[] = [
     confidence: 0.78,
     timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000).toISOString(),
     camera_id: 'cam-03',
-    snapshot_path: '/placeholders/snapshot-2.png',
+    snapshot_path: 'https://images.unsplash.com/photo-1666342873508-453f4b7883b6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwZXJzb24lMjBzdGFuZGluZ3xlbnwwfHx8fDE3NjI4NDQ5NjZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
   },
   {
     id: 5,
@@ -46,7 +46,7 @@ export const mockAlerts: Alert[] = [
     confidence: 0.91,
     timestamp: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
     camera_id: 'cam-01',
-    snapshot_path: '/placeholders/snapshot-1.png',
+    snapshot_path: 'https://images.unsplash.com/photo-1605548587049-8bda5bfdbbf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwZXJzb24lMjBmYWxsaW5nfGVufDB8fHx8MTc2Mjg2NjY4Nnww&ixlib=rb-4.1.0&q=80&w=1080',
   },
 ];
 
